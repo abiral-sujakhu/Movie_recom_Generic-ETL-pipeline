@@ -1,0 +1,12 @@
+,title,year,release_date,genres,overview,runtime,imdb_rating,tmdb_vote_count,director,cast,poster_url
+count,1000,999.0,999,1000,1000,0.0,1000.0,1000.0,1000,1000,1000
+unique,999,,,201,1000,,,,548,660,1000
+top,Drishyam,,,Drama,"Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",,,,Alfred Hitchcock,Tom Hanks,"https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_UX67_CR0,0,67,98_AL_.jpg"
+freq,2,,,85,1,,,,14,12,1
+mean,,1991.2172172172172,1991-03-21 11:00:10.810810880,,,,7.949299999999999,273692.911,,,
+min,,1920.0,1920-01-01 00:00:00,,,,7.6,25088.0,,,
+25%,,1976.0,1976-01-01 00:00:00,,,,7.7,55526.25,,,
+50%,,1999.0,1999-01-01 00:00:00,,,,7.9,138548.5,,,
+75%,,2009.0,2009-01-01 00:00:00,,,,8.1,374161.25,,,
+max,,2020.0,2020-01-01 00:00:00,,,,9.3,2343110.0,,,
+std,,23.297024844324177,,,,,0.2754912074920095,327372.7039341249,,,
