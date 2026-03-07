@@ -1,55 +1,66 @@
-import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def run_eda(df: pd.DataFrame, file_stem: str, out_dir: str) -> list[str]:
+def run_eda(df: pd.DataFrame) -> dict:
     """
-    Run EDA on a DataFrame and save all outputs to out_dir.
+    Compute EDA statistics and return them in a dict. Nothing is written to disk.
 
-    Parameters
-    ----------
-    df        : transformed DataFrame to analyse
-    file_stem : base name used for output files (e.g. 'movies_transformed')
-    out_dir   : folder where PNGs and CSVs are saved
-
-    Returns
-    -------
-    List of paths to every PNG file that was saved.
+    Returns a dict with keys:
+      summary    : pd.DataFrame
+      missing    : pd.Series
+      skewness   : pd.Series  (or None)
+      kurtosis   : pd.Series  (or None)
+      correlation: pd.DataFrame (or None)
+      covariance : pd.DataFrame (or None)
     """
-    os.makedirs(out_dir, exist_ok=True)
-    saved_pngs: list[str] = []
+    result = {
+        "summary": None, "missing": None,
+        "skewness": None, "kurtosis": None,
+        "correlation": None, "covariance": None,
+    }
 
     if df.empty:
-        print(f"[WARN] DataFrame is empty — skipping EDA for '{file_stem}'")
-        return saved_pngs
+        return result
 
-    # ── Summary stats ─────────────────────────────────────────────────────────
-    summary_path = os.path.join(out_dir, f"{file_stem}_summary.csv")
-    df.describe(include="all").to_csv(summary_path)
-    print(f"[INFO] Summary stats → {summary_path}")
+    result["summary"] = df.describe(include="all")
+
+    missing = df.isnull().sum()
+    result["missing"] = missing[missing > 0]
+
+    numeric_df = df.select_dtypes(include="number")
+    if len(numeric_df.columns) >= 2:
+        result["correlation"] = numeric_df.corr()
+        result["covariance"]  = numeric_df.cov()
+        result["skewness"]    = numeric_df.skew()
+        result["kurtosis"]    = numeric_df.kurtosis()
+
+    return result
+
+
+def run_visualizations(df: pd.DataFrame) -> list:
+    """
+    Generate matplotlib figures for the DataFrame. Nothing is written to disk.
+
+    Returns a list of (title, Figure) tuples.
+    """
+    figures = []
+
+    if df.empty:
+        return figures
 
     numeric_df = df.select_dtypes(include="number")
     cat_cols   = df.select_dtypes(include="object").columns.tolist()
 
-    # ── Correlation & covariance ───────────────────────────────────────────────
+    # Correlation heatmap
     if len(numeric_df.columns) >= 2:
-        numeric_df.corr().to_csv(os.path.join(out_dir, f"{file_stem}_correlation.csv"))
-        numeric_df.cov().to_csv(os.path.join(out_dir, f"{file_stem}_covariance.csv"))
-        print("[INFO] Skewness:\n", numeric_df.skew())
-        print("[INFO] Kurtosis:\n", numeric_df.kurtosis())
-
-        # Correlation heatmap
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.heatmap(numeric_df.corr(), annot=True, fmt=".2f", cmap="coolwarm",
                     center=0, linewidths=0.5, ax=ax)
-        ax.set_title(f"Correlation — {file_stem}")
+        ax.set_title("Correlation Heatmap")
         plt.tight_layout()
-        path = os.path.join(out_dir, f"{file_stem}_heatmap.png")
-        fig.savefig(path, dpi=100, bbox_inches="tight")
-        saved_pngs.append(path)
-        plt.close(fig)
+        figures.append(("Correlation Heatmap", fig))
 
         # Histograms per numeric column
         for col in numeric_df.columns:
@@ -57,12 +68,9 @@ def run_eda(df: pd.DataFrame, file_stem: str, out_dir: str) -> list[str]:
             sns.histplot(numeric_df[col].dropna(), bins=20, kde=True, ax=ax)
             ax.set_title(f"{col} Distribution")
             plt.tight_layout()
-            path = os.path.join(out_dir, f"{file_stem}_{col}_hist.png")
-            fig.savefig(path, dpi=100, bbox_inches="tight")
-            saved_pngs.append(path)
-            plt.close(fig)
+            figures.append((col, fig))
 
-    # ── Categorical top-10 bar charts ─────────────────────────────────────────
+    # Categorical top-10 bar charts
     for col in cat_cols:
         top = df[col].value_counts().head(10)
         if top.empty:
@@ -71,10 +79,6 @@ def run_eda(df: pd.DataFrame, file_stem: str, out_dir: str) -> list[str]:
         sns.barplot(x=top.values, y=top.index, ax=ax)
         ax.set_title(f"Top 10: {col}")
         plt.tight_layout()
-        path = os.path.join(out_dir, f"{file_stem}_{col}_top10.png")
-        fig.savefig(path, dpi=100, bbox_inches="tight")
-        saved_pngs.append(path)
-        plt.close(fig)
+        figures.append((f"Top 10: {col}", fig))
 
-    print(f"[INFO] EDA complete — {len(saved_pngs)} plots saved to '{out_dir}'")
-    return saved_pngs
+    return figures
