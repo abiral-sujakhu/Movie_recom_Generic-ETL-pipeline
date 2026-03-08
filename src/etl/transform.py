@@ -194,7 +194,7 @@ def transform_movies(df: pd.DataFrame) -> pd.DataFrame:
 
     # Clean runtime
     if "runtime" in df.columns:
-        df["runtime"] = df["runtime"].apply(lambda x: pd.to_numeric(_clean_text(x), errors="coerce"))
+        df["runtime"] = df["runtime"].apply(_clean_runtime)
 
     # Safe numeric columns
     for col in ["imdb_rating","tmdb_rating","popularity","tmdb_vote_count","imdb_votes"]:
@@ -231,5 +231,8 @@ def transform_movies(df: pd.DataFrame) -> pd.DataFrame:
         out = out.drop_duplicates(subset=["title","year"])
     elif "title" in out.columns:
         out = out.drop_duplicates(subset=["title"])
+
+    # Drop ID columns — not needed downstream
+    out = out.drop(columns=[c for c in ["imdb_id", "tmdb_id"] if c in out.columns])
 
     return out.reset_index(drop=True)
