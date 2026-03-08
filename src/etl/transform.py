@@ -12,7 +12,8 @@ COLUMN_ALIASES = {
     "tmdb_id": ["tmdb_id", "id"],
     "imdb_rating": ["imdb_rating", "imdbrating"],
     "imdb_votes": ["imdb_votes", "imdbvotes", "votes"],
-    "tmdb_rating": ["tmdb_rating", "vote_average", "rating"],
+    "tmdb_rating": ["tmdb_rating", "vote_average"],
+    "rating": ["rating"],
     "tmdb_vote_count": ["tmdb_vote_count", "vote_count"],
     "popularity": ["popularity"],
     "director": ["director", "directors"],
@@ -24,7 +25,7 @@ COLUMN_ALIASES = {
 
 CANONICAL = [
     "title","year","release_date","genres","overview","runtime",
-    "imdb_id","tmdb_id","imdb_rating","imdb_votes","tmdb_rating","tmdb_vote_count",
+    "imdb_id","tmdb_id","imdb_rating","tmdb_rating","rating","imdb_votes","tmdb_vote_count","vote_count",
     "popularity","director","cast","language","country","poster_url"
 ]
 
@@ -138,7 +139,7 @@ def apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
         elif "imdb" in col and ("rating" in col or "score" in col):
             mapping[col] = "imdb_rating"
         elif "imdb" in col and ("vote" in col or "count" in col):
-            mapping[col] = "imdb_votes"
+            pass  # imdb_votes dropped
         elif "tmdb" in col and ("rating" in col or "score" in col or "average" in col):
             mapping[col] = "tmdb_rating"
         elif "tmdb" in col and ("vote" in col or "count" in col):
@@ -146,7 +147,7 @@ def apply_aliases(df: pd.DataFrame) -> pd.DataFrame:
         elif "vote" in col or "count" in col:
             mapping[col] = "tmdb_vote_count"
         elif "rating" in col or "score" in col:
-            mapping[col] = "imdb_rating"
+            mapping[col] = "rating"
         elif "poster" in col:
             mapping[col] = "poster_url"
         elif "overview" in col or "plot" in col or "synopsis" in col or "description" in col or "summary" in col:
@@ -197,7 +198,7 @@ def transform_movies(df: pd.DataFrame) -> pd.DataFrame:
         df["runtime"] = df["runtime"].apply(_clean_runtime)
 
     # Safe numeric columns
-    for col in ["imdb_rating","tmdb_rating","popularity","tmdb_vote_count","imdb_votes"]:
+    for col in ["imdb_rating","tmdb_rating","rating","imdb_votes","tmdb_vote_count","vote_count","popularity"]:
         if col in df.columns:
             c = df[col]
             # If duplicate column names produced a DataFrame, take the first column
@@ -234,5 +235,32 @@ def transform_movies(df: pd.DataFrame) -> pd.DataFrame:
 
     # Drop ID columns — not needed downstream
     out = out.drop(columns=[c for c in ["imdb_id", "tmdb_id"] if c in out.columns])
+
+    # Resolve to a single 'rating' column:
+    # - If both tmdb_rating and imdb_rating exist → keep tmdb_rating, drop imdb_rating
+    # - If only one exists → use that one
+    # - Any pre-existing 'rating' column (e.g. from meta_score) is replaced
+    # - Rename the chosen column to 'rating'
+    out = out.drop(columns=[c for c in ["rating"] if c in out.columns], errors="ignore")
+    if "tmdb_rating" in out.columns and "imdb_rating" in out.columns:
+        out = out.drop(columns=["imdb_rating"])
+        out = out.rename(columns={"tmdb_rating": "rating"})
+    elif "tmdb_rating" in out.columns:
+        out = out.rename(columns={"tmdb_rating": "rating"})
+    elif "imdb_rating" in out.columns:
+        out = out.rename(columns={"imdb_rating": "rating"})
+
+    # Resolve to a single 'vote_count' column:
+    # - If both tmdb_vote_count and imdb_votes exist → keep tmdb_vote_count, drop imdb_votes
+    # - If only one exists → use that one
+    # - Rename the chosen column to 'vote_count'
+    out = out.drop(columns=[c for c in ["vote_count"] if c in out.columns], errors="ignore")
+    if "tmdb_vote_count" in out.columns and "imdb_votes" in out.columns:
+        out = out.drop(columns=["imdb_votes"])
+        out = out.rename(columns={"tmdb_vote_count": "vote_count"})
+    elif "tmdb_vote_count" in out.columns:
+        out = out.rename(columns={"tmdb_vote_count": "vote_count"})
+    elif "imdb_votes" in out.columns:
+        out = out.rename(columns={"imdb_votes": "vote_count"})
 
     return out.reset_index(drop=True)
