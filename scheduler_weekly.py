@@ -65,7 +65,7 @@ def main():
     # ========================================================================
     
     # DEFAULT: Every Sunday at 6:00 PM
-    # schedule.every().sunday.at("18:00").do(job_weekly_reports)
+    schedule.every().sunday.at("18:00").do(job_weekly_reports)
     
     # ALTERNATIVE SCHEDULES (uncomment to use):
     # -----------------------------------------------------------------------
@@ -79,7 +79,7 @@ def main():
     # schedule.every(7).days.at("18:00").do(job_weekly_reports)
     
     # FOR TESTING: Run every 2 minutes (comment this out for production!)
-    schedule.every(2).minutes.do(job_weekly_reports)
+    # schedule.every(2).minutes.do(job_weekly_reports)
     
     # FOR TESTING: Run immediately once, then weekly
     # job_weekly_reports()
