@@ -13,19 +13,26 @@ from src.recommender.recommend import MovieRecommender
 
 st.title("🍿 Movie Recommender")
 
-data_path = Path("data/processed/movies_transformed.csv")
-if not data_path.exists():
-    st.warning("No transformed dataset found. Go to **ETL_Run** and generate it first.")
+PROCESSED_DIR = ROOT / "data" / "processed"
+
+csv_files = sorted(PROCESSED_DIR.glob("*.csv"))
+if not csv_files:
+    st.warning("No processed datasets found. Run **ETL** first to generate one.")
     st.stop()
 
-df = pd.read_csv(data_path)
-df["feature_text"] = build_feature_text(df)
+selected_csv = st.selectbox("Select a dataset", csv_files, format_func=lambda p: p.name)
 
 @st.cache_resource
-def load_model(df_cached: pd.DataFrame):
-    return MovieRecommender(df_cached, feature_col="feature_text")
+def load_model(path: str):
+    df = pd.read_csv(path)
+    df["feature_text"] = build_feature_text(df)
+    return MovieRecommender(df, feature_col="feature_text"), df
 
-model = load_model(df)
+try:
+    model, df = load_model(str(selected_csv))
+except Exception as e:
+    st.error(f"Failed to load model: {e}")
+    st.stop()
 
 movie_list = df["title"].dropna().astype(str).sort_values().unique().tolist()
 selected = st.selectbox("Choose a movie", movie_list)

@@ -1,0 +1,12 @@
+,title,year,release_date,genres,overview,runtime,imdb_id,tmdb_id,imdb_rating,imdb_votes,tmdb_rating,tmdb_vote_count,popularity,director,cast,poster_url
+count,801,801.0,801,801,801,800.0,800,800.0,790.0,789.0,800.0,801.0,800.0,801,800,801
+unique,783,,761,235,801,,800,,,,,,,545,796,801
+top,Cinderella,,2025-10-15,"Action, Adventure, Science Fiction","Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",,tt32357218,,,,,,,Martin Scorsese,"Elijah Wood, Ian McKellen, Viggo Mortensen, Sean Astin, Andy Serkis","https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_UX67_CR0,0,67,98_AL_.jpg"
+freq,3,,3,45,1,,1,,,,,,,10,2,1
+mean,,2006.8913857677903,,,,115.4,,283351.8925,6.902531645569621,334474.48162230675,6.9567775,9011.881398252184,21.66985125,,,
+std,,16.611123929531292,,,,24.87556013168007,,375406.26096100453,0.9726259235750486,453733.02136348956,0.770924681193852,82876.62653711339,21.129949589942598,,,
+min,,1931.0,,,,6.0,,11.0,2.5,1736.0,4.017,202.0,12.9063,,,
+25%,,1997.0,,,,100.0,,8253.5,6.3,46920.0,6.46375,1082.0,15.478,,,
+50%,,2011.0,,,,111.0,,51945.5,6.9,166101.0,6.971,3264.0,17.609450000000002,,,
+75%,,2019.0,,,,127.0,,477025.75,7.574999999999999,411342.0,7.5015,8548.0,20.913575,,,
+max,,2026.0,,,,339.0,,1419406.0,9.3,3164324.0,8.716,2343110.0,388.3942,,,
