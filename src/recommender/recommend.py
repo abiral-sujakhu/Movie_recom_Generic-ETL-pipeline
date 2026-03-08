@@ -49,7 +49,7 @@ class MovieRecommender:
         recs = self.df.iloc[order].copy()
         recs["similarity"] = sims[order]
 
-        for score_col in ["imdb_rating","tmdb_rating","popularity"]:
+        for score_col in ["rating","popularity"]:
             if score_col in recs.columns:
                 recs = recs.sort_values(["similarity", score_col], ascending=[False, False])
                 break
@@ -57,7 +57,7 @@ class MovieRecommender:
             recs = recs.sort_values("similarity", ascending=False)
 
         show = ["title","similarity"]
-        for c in ["year","genres","imdb_rating","tmdb_rating","popularity","poster_url"]:
+        for c in ["year","genres","rating","popularity","poster_url"]:
             if c in recs.columns:
                 show.append(c)
 

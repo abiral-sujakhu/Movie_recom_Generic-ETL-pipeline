@@ -21,6 +21,12 @@ if not csv_files:
 
 selected = st.selectbox("Select a processed dataset", csv_files, format_func=lambda p: p.name)
 
+# Clear cache if it holds the old 2-tuple format
+if "viz_figures" in st.session_state:
+    sample = st.session_state["viz_figures"]
+    if sample and len(sample[0]) == 2:
+        del st.session_state["viz_figures"]
+
 if st.button("Generate Visualizations"):
     with st.spinner("Generating charts..."):
         try:
@@ -39,24 +45,30 @@ if "viz_figures" in st.session_state:
 
     if not figures:
         st.info("No charts — dataset may have no numeric or categorical columns.")
-    else:
-        st.subheader(f"Charts for: {stem}")
+        st.stop()
 
-        heatmap_figs = [(t, f) for t, f in figures if t == "Correlation Heatmap"]
-        hist_figs    = [(t, f) for t, f in figures if "Distribution" in t]
-        bar_figs     = [(t, f) for t, f in figures if t.startswith("Top 10:")]
+    st.subheader(f"Charts for: {stem}")
 
-        for title, fig in heatmap_figs:
-            st.markdown("### Correlation Heatmap")
-            st.pyplot(fig)
+    SECTIONS = [
+        ("ratings",      "⭐ Ratings"),
+        ("trends",       "📅 Trends Over Time"),
+        ("genres",       "🎬 Genres"),
+        ("people",       "🎥 Directors, Languages & Countries"),
+        ("technical",    "⏱ Technical"),
+        ("correlations", "🔗 Correlations"),
+    ]
 
-        if hist_figs:
-            st.markdown("### Distributions")
-            cols = st.columns(3)
-            for i, (title, fig) in enumerate(hist_figs):
-                cols[i % 3].pyplot(fig)
+    for category, heading in SECTIONS:
+        section_figs = [(t, f) for cat, t, f in figures if cat == category]
+        if not section_figs:
+            continue
 
-        if bar_figs:
-            st.markdown("### Top-10 Categories")
-            for title, fig in bar_figs:
+        st.markdown(f"### {heading}")
+
+        if category == "correlations" or len(section_figs) == 1:
+            for title, fig in section_figs:
                 st.pyplot(fig)
+        else:
+            cols = st.columns(2)
+            for i, (title, fig) in enumerate(section_figs):
+                cols[i % 2].pyplot(fig)

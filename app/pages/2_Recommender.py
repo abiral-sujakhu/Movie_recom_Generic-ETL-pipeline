@@ -23,13 +23,14 @@ if not csv_files:
 selected_csv = st.selectbox("Select a dataset", csv_files, format_func=lambda p: p.name)
 
 @st.cache_resource
-def load_model(path: str):
+def load_model(path: str, _mtime: float):
     df = pd.read_csv(path)
     df["feature_text"] = build_feature_text(df)
     return MovieRecommender(df, feature_col="feature_text"), df
 
 try:
-    model, df = load_model(str(selected_csv))
+    mtime = selected_csv.stat().st_mtime
+    model, df = load_model(str(selected_csv), mtime)
 except Exception as e:
     st.error(f"Failed to load model: {e}")
     st.stop()

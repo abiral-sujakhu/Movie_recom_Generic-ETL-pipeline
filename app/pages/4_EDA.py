@@ -33,8 +33,11 @@ if st.button("Run EDA"):
             st.exception(e)
 
 # ── Display results ───────────────────────────────────────────────────────────
-if "eda_result" in st.session_state and not isinstance(st.session_state["eda_result"], dict):
-    del st.session_state["eda_result"]
+# Discard stale results that predate the current EDA schema
+if "eda_result" in st.session_state:
+    _r = st.session_state["eda_result"]
+    if not isinstance(_r, dict) or "overview" not in _r:
+        del st.session_state["eda_result"]
 
 if "eda_result" in st.session_state:
     result = st.session_state["eda_result"]
@@ -42,37 +45,111 @@ if "eda_result" in st.session_state:
 
     st.subheader(f"Dataset: {stem}")
 
-    # Summary statistics
+    # ── 1. Dataset Overview ───────────────────────────────────────────────────
+    st.markdown("### 1️⃣ Dataset Overview")
+    ov = result.get("overview")
+    if ov:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Rows",    ov["rows"])
+        col2.metric("Columns", ov["columns"])
+        col3.metric("Memory",  f"{ov['memory_usage_mb']} MB")
+        with st.expander("Column names & dtypes"):
+            dtype_df = pd.DataFrame.from_dict(ov["dtypes"], orient="index", columns=["dtype"])
+            st.dataframe(dtype_df, use_container_width=True)
+
+    # ── 2. Missing Value Analysis ─────────────────────────────────────────────
+    st.markdown("### 2️⃣ Missing Value Analysis")
+    miss = result.get("missing")
+    if miss is not None and not miss.empty:
+        st.dataframe(miss, use_container_width=True)
+    else:
+        st.success("No missing values detected.")
+
+    # ── 3. Duplicate Detection ────────────────────────────────────────────────
+    st.markdown("### 3️⃣ Duplicate Detection")
+    dup = result.get("duplicates")
+    if dup:
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Rows",      dup["total_rows"])
+        col2.metric("Duplicate Rows",  dup["duplicate_rows"])
+        col3.metric("Duplicate %",     f"{dup['duplicate_pct']}%")
+        if dup["duplicate_rows"] == 0:
+            st.success("No duplicate rows found.")
+        else:
+            st.warning(f"{dup['duplicate_rows']} duplicate row(s) detected.")
+
+    # ── 4. Descriptive Statistics ─────────────────────────────────────────────
+    st.markdown("### 4️⃣ Descriptive Statistics")
     if result["summary"] is not None:
-        st.markdown("### Summary Statistics")
         st.dataframe(result["summary"], use_container_width=True)
 
-    # Missing values
-    if result["missing"] is not None and not result["missing"].empty:
-        st.markdown("### Missing Values")
-        st.dataframe(result["missing"].rename("missing_count").to_frame(), use_container_width=True)
-    else:
-        st.success("No missing values.")
+    # ── 5. Unique Value Analysis ──────────────────────────────────────────────
+    st.markdown("### 5️⃣ Unique Value Analysis")
+    uv = result.get("unique_values")
+    if uv is not None:
+        st.dataframe(uv, use_container_width=True)
 
-    # Skewness & Kurtosis side by side
-    if result["skewness"] is not None or result["kurtosis"] is not None:
+    # ── 6. Genre Frequency Analysis ───────────────────────────────────────────
+    st.markdown("### 6️⃣ Genre Frequency Analysis")
+    gf = result.get("genre_frequency")
+    if gf is not None and not gf.empty:
+        st.dataframe(
+            gf.rename("count").reset_index().rename(columns={"index": "genre"}),
+            use_container_width=True,
+        )
+    else:
+        st.info("No 'genres' column found in this dataset.")
+
+    # ── 7. Release Year Statistics ────────────────────────────────────────────
+    st.markdown("### 7️⃣ Release Year Statistics")
+    ys = result.get("year_stats")
+    if ys:
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Earliest",    ys["min_year"])
+        col2.metric("Latest",      ys["max_year"])
+        col3.metric("Median",      ys["median_year"])
+        col4.metric("Most Common", ys["most_common_year"])
+        with st.expander("Movies count per year"):
+            st.dataframe(
+                ys["counts_per_year"].rename("count").reset_index().rename(columns={"index": "year"}),
+                use_container_width=True,
+            )
+    else:
+        st.info("No 'year' column found in this dataset.")
+
+    # ── 8. Correlation Analysis ───────────────────────────────────────────────
+    st.markdown("### 8️⃣ Correlation Analysis")
+    if result["correlation"] is not None:
+        st.dataframe(
+            result["correlation"].style.background_gradient(cmap="coolwarm", axis=None),
+            use_container_width=True,
+        )
         col1, col2 = st.columns(2)
         if result["skewness"] is not None:
             with col1:
-                st.markdown("### Skewness")
+                st.markdown("**Skewness**")
                 st.dataframe(result["skewness"].rename("skewness").to_frame(), use_container_width=True)
         if result["kurtosis"] is not None:
             with col2:
-                st.markdown("### Kurtosis")
+                st.markdown("**Kurtosis**")
                 st.dataframe(result["kurtosis"].rename("kurtosis").to_frame(), use_container_width=True)
-
-    # Correlation matrix
-    if result["correlation"] is not None:
-        st.markdown("### Correlation Matrix")
-        st.dataframe(result["correlation"].style.background_gradient(cmap="coolwarm", axis=None),
-                     use_container_width=True)
-
-    # Covariance matrix
-    if result["covariance"] is not None:
         with st.expander("Covariance Matrix"):
-            st.dataframe(result["covariance"], use_container_width=True)
+            if result["covariance"] is not None:
+                st.dataframe(result["covariance"], use_container_width=True)
+    else:
+        st.info("Not enough numeric columns for correlation analysis.")
+
+    # ── 9. Record Inspection ──────────────────────────────────────────────────
+    st.markdown("### 9️⃣ Record Inspection")
+    sr = result.get("sample_records")
+    if sr:
+        tab1, tab2, tab3 = st.tabs(["First 5 rows", "Last 5 rows", "Random sample"])
+        with tab1:
+            st.dataframe(sr["head"], use_container_width=True)
+        with tab2:
+            st.dataframe(sr["tail"], use_container_width=True)
+        with tab3:
+            st.dataframe(sr["random_sample"], use_container_width=True)
+
+
+
