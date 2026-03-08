@@ -219,4 +219,4 @@ if "df_clean" in st.session_state:
     col1, col2, col3 = st.columns(3)
     col1.page_link("pages/4_EDA.py",          label="EDA")
     col2.page_link("pages/5_Visualization.py", label="Visualization")
-    col3.page_link("pages/2_Recommender.py",   label="Recommender")
+    col3.page_link("pages/3_Recommender.py",   label="Recommender")
